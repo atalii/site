@@ -1,0 +1,5 @@
+*.o
+server
+server.bin
+res.zip
+/result

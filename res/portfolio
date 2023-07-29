@@ -1,0 +1,119 @@
+! a bit of a quick-start guide
+
+this website is both a portfolio of sorts and a more technical blog where i
+write about the things i do for an imagined technical audience. to the extent
+that it's a portfolio, some of the things i've done are listed below, but to
+the extent that it's a blog, it's, stylistically, not all that formal. i'm not
+adhering to strict rules of grammar, capitalization, or readability, and i
+snuck a few emojis into the footer. in case formality was expected, i should
+explain that these are *counter-aesthetic choices*. the part of computer
+science i enjoy is frequently a trek through formal specifications written by a
+homogeneous group of men from the 70's. the field's community has a tendency to
+reproduce itself, and, even in famously queer-accepting communities such as
+that of the rust programming language, the demographics haven't shifted as much
+as would be equitable. as this website is de-facto my corner of the internet, i
+want to present an approach to the programming i like to do that's more in line
+with my own values. the site as a whole is intended to be a more relaxed and informal
+environment where small mistakes are okay and difference is valued. i want to
+communicate not only what i've done, but who i am in my approach to it all.
+
+with that aside, here's the software i maintain or have maintained for some
+time, as a rough chronology:
+
++ a fork of amp, a text editor written in rust (the actual maintainer was
+only sporadically merging and reviewing pull requests. i forked to maintain it
+myself and add new features for as long as i was using the editor, ultimately
+leaving it aside when i switched text editors a year or so later.) i would link
+this, but the fork is under my deadname.
+
++ painted, a notification daemon for desktop linux. there's nothing particularly
+special about this, but i wanted a notification daemon, so i read the dbus
+specs and got to work.
+
+>https://github.com/atalii/painted i use this daily.
+
++ gemasmref, a simultaneous experiment with the gemini protocol (roughly a smol
+web version of HTTP), the prolog language, and x86 assembly. it's a prolog
+application that ran a gemini server which allowed searching through an x86
+instruction reference. i ended up not needing it, so it's sitting mostly
+untouched and presumably unused on github.
+
++ systemgmi, another gemini server, this time written in C, that displays
+system statistics and systemd-based metrics. this was originally written for my
+raspberry pi home server, but i've shifted around the home server situation a
+lot since then, and the new server runs alpine linux. there's not much
+opportunity to use this anymore, alas. it was, however, a great exploration of
+unix's networking primitives, and, surprisingly, the UTF-8 encoding. it also
+lead me into systemd's code to fix some erroneous documentation, a fix which
+was eventually merged.
+
++ a lisp-like CLI calculator in x86 assembly. this was *fun*. i did this over a
+subset of a winter break and never ended up finishing it, but i had a great
+time. at the end, i had what was roughly an RPN calculator capable of limited
+variable storage written entirely in assembly with no libc. of course, nothing
+as crazy as sectorlisp, but fun nonetheless.
+
++ some unmerged and abandoned stuff for python's urllib. urllib.parse had its
+behavior defined by hard-coded URL-schemes. i did some prototypes of fixes to
+generalize the behavior, but those ended up falling through as life combined
+with the churn around urllib. i'd like to come back to this eventually.
+
++ stlsc.nix, a nix derivation to create self-signed TLS certificates with
+terrible security properties. this is actually really helpful for just getting
+a throwaway cert as quickly as possible for dev environments. i still use and
+maintain this from time to time.
+
++ y86-exe, a runtime/interpreter for the y86 assembly language written in C.
+this was the final project for my computer systems class, which had us digging
+into nearly everything between endianness and memory management.
+
++ ac-mon, a server that monitors the status of the online classrooms at my
+school and makes troubleshooting the network ghosts just a bit easier. i split
+the frontend and backend with a friend. the frontend is some type of
+single page web app that talks to my api. my api is built on a number of
+terrifying hacks, including parsing javascript with a regular expression and
+intercepting RPC calls over websockets. despite that, it works more reliably
+than that which it monitors, so i'd call it a success.
+
+>https://github.com/atalii/ac-mon also, it's not written under my deadname, so
+here's the source.
+
++ ohs-rcv, a little script to calculate the ranked-choice elections used for
+student government. this read through the data produced by the qualtrics ballot
+forms and saved a friend on student government some amount of frustration. this
+is also on github, but not any more than a hundred lines, so it's not really
+worth linking.
+
++ adage, a sudo replacement written in ada. this was originally supposed to be
+a fun exploration into ada like gemasmref was for prolog, but it turns out that
+ada is an incredible programming language. it's all the things i wished c++
+was, without templates and without hours-long compile times. adage itself is a
+simple little unix utility, and more comparable to doas than to sudo, but the
+temptation of formal verification on that codebase makes it genuinely appealing
+as a proper alternative in my eyes.
+
+>https://github.com/atalii/adage check out the source
+
++ i help maintain nixpkgs, the primary package set for the nix package manager.
+i try to review roughly one pull request per week to help keep everything running
+smoothly. i'm also the maintainer for the alire package, which is a fairly
+essential part of writing modern open source ada code. i'm currently working on
+getting some more substantial support of the ada language and alire ecosystem
+into nixpkgs. i've nothing specific to link here as of yet, but hopefully i'll
+have something soon.
+
++ i may as well also list this website, which has a few good hacks going for
+it. it's written ground-up in C, utilizing libraries just for HTTP and to read
+the data archive. (fine, it uses libc, too.)
+
+>/meta-blog i wrote a longer piece about the lovely little mess that is this
+website, and the source is linked in the footer.
+
+_
+
+with that, i think that's most of the code i've written over the past few
+years. this is definitely not everything; it notably doesn't include my smaller
+contributions to open source libraries i've depended on in the past, and it
+doesn't include the small things i never really saw through or that never left
+my hard drive, but it reads as a good-enough encapsulation of the types of
+eccentricities i like to play with. thanks for getting through all this :)

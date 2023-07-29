@@ -1,0 +1,65 @@
+* my website's bad decisions
+
+this is a weird website. it serves static content, but it's not a static
+server. instead, it and all the static assets are a single self-contained
+binary, produced in the penultimate build step:
+
+$ cat server.bin res.zip > server
+
+this is perhaps my favorite frivolous trick: concatenating an executable and a zip
+archive happens to produce a single file that can simultaneously be interpreted
+as an executable and as a zip archive. this isn't due to anything special about
+the magic numbers; rather, zip archives store their metadata at the end of the
+file and executables store their metadata at the beginning. so when read as an
+executable by /lib/ld, it's read forward, but when that same executable opens
+up /proc/self/exe as a zip, it's read backwards.
+
+alone, this is a neat trick, but it's the foundation for so much chaotic fun on
+this server. as i've decided i want to distribute my server as a single binary,
+i needed to pick a compiled language. rust and go would be excellent choices
+each, but, just for fun, i built the site in c. that said, i have some value
+for my time: i did not implement zip archive parsing and decompression by
+myself, nor did i implement http myself. for the former i use libarchive, and
+for the latter i use mongoose. having no experience in C-based HTTP servers, i
+chose mongoose as i did because my dog kind of looks like a mongoose.
+
+now, let's crack open our pointer arithmetic and parse the zip archive that is
+/proc/self/exe. i hope you weren't expecting HTML. there's some normal stuff in
+there, to be fair. /styles.css is written and served as-is. other pages,
+though, are not HTML. they are not markdown. instead, i've rolled my own markup
+language. it's a simple thing. it supports headers, paragraphs, and links in
+their own lines. it vaguely resembles gemtext, but, truth be told, it's just
+what i found myself writing when i opened my editor to write the index. let's
+dig inside the render_markup routine:
+
+int64_t buffer_size = 8192; // TODO: resize the buffer if additions would overflow
+
+actually, let's put that away, and hope that no page ever renders to over 8192
+bytes. i'll fix it soon, i promise. aside from that, it's just brittle c-string
+mangling to transform my weird little language into HTML that we load into
+memory and serve on request. shockingly enough, it all works. each page has a
+nice footer, we've got proper hypertext, and my markup language is actually
+quite pleasant to write.
+
+! a prospective post-mortem
+
+with all that said: i think it goes without saying not to do what i've done.
+it's a bad idea. stack and heap corruption are not the most forgiving
+playthings. every memory access is just one mistaken pointer arithmetic
+calculation away from borking the allocator and bringing everything down with
+it at some unspecified later date. this just isn't the domain where you
+actually need to deal with manual memory management. cpython is used in
+high-traffic production web services. *cpython*. the language implementation
+that *still* has a global interpreter lock. and if that's too slow, go
+and rust are both excellent languages for their intended domains. c is just ...
+a bad idea. now of course, all bets are off for embedded programming, but in
+any other environment, especially one as boring as this, there's no reason
+to deal with the api ergonomics (or lack thereof) that c libraries like
+mongoose are forced to provide. don't write your own router when
+@app.route("/") is sufficient.
+
+everything about this architecture is a bad decision. every implementation
+detail only makes it worse. this isn't about minimalism or simplicity. this is
+about having fun with a dangerous ball of spikes exposed to the public
+internet. this architecture is terrible, impractical, unnecessary, and i love
+it.
