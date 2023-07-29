@@ -8,6 +8,11 @@
 struct response_body {
 	char *mime_type;
 	char *text;
+
+	// a len < 0 indicates that text is null-terminated. otherwise, text is
+	// arbitrary data and may contain a null pointer. the allocation is len
+	// bytes long.
+	ssize_t len;
 };
 
 /* Do a bit of a static slab-allocation for routes. Also, we just do a linear
@@ -139,6 +144,7 @@ render_markup(const char *txt, int64_t len)
 	const char *head_pre =
 		"<!DOCTYPE html><html><head>"
 		"<link rel=\"stylesheet\" type=\"text/css\" href=\"/styles.css\"/>"
+		"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"/>"
 		"<title>";
 	
 	const char *head_post =
@@ -188,14 +194,36 @@ hnd(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
 	char *rqpath = strndup(hm->uri.ptr + (hm->uri.ptr[0] == '/'), hm->uri.len);
 
 	const struct response_body *resp = get_route(rqpath);
-	if (resp)
-		mg_http_reply(c, 200, resp->mime_type, resp->text, "");
-	else
+	if (!resp) {
 		mg_http_reply(
 			c, 404,
 			"Content-Type: text/html; charset=utf-8\r\n",
-			get_route("404")->text, "");
+			"%s", get_route("404")->text);
 
+		goto cleanup;
+	}
+
+	if (resp->len < 0) {
+		int clen = sizeof("Content-Type: \r\n") + strlen(resp->mime_type);
+		char *cbuf = malloc(clen);
+		strcpy(cbuf, "Content-Type: ");
+		strcat(cbuf, resp->mime_type);
+		strcat(cbuf, "\r\n");
+
+		mg_http_reply(c, 200, cbuf, "%s", resp->text);
+		free(cbuf);
+	} else {
+		mg_printf(c,
+			"HTTP/1.1 200 OK\r\n"
+			"Transfer-Encoding: chunked\r\n"
+			"Content-Type: %s\r\n\n",
+			resp->mime_type);
+
+		mg_http_write_chunk(c, resp->text, resp->len);
+		mg_http_write_chunk(c, "", 0);
+	}
+
+cleanup:
 	free(rqpath);
 }
 
@@ -222,15 +250,30 @@ set_route(const char *route, const char *block, int64_t len)
 	
 	int is_css = strlen(route) > 4
 		&& strcmp(route + strlen(route) - 4, ".css") == 0;
-	
-	routes.routes[index].route = strdup(route);
-	routes.routes[index].body.mime_type = is_css
-		? "Content-Type: text/css; charset=utf-8\r\n"
-		: "Content-Type: text/html; charset=utf-8\r\n";
 
-	routes.routes[index].body.text = is_css
-		? strndup(block, len)
-		: render_markup(block, len);
+	int is_ttf = strlen(route) > 4
+		&& strcmp(route + strlen(route) - 4, ".ttf") == 0;
+	
+	// for now, all routes return utf-8.
+	routes.routes[index].route = strdup(route);
+	routes.routes[index].body.len = -1;
+	routes.routes[index].body.mime_type = is_css
+		? "text/css; charset=utf-8"
+		: is_ttf
+			? "font/ttf"
+			: "text/html; charset=utf-8";
+
+	// ttf is the only binary data type we have to deal with.
+	if (!is_ttf) {
+		routes.routes[index].body.text = is_css
+			? strndup(block, len)
+			: render_markup(block, len);
+	} else {
+		char *dup = malloc(len);
+		memcpy(dup, block, len);
+		routes.routes[index].body.text = dup;
+		routes.routes[index].body.len = len;
+	}
 	
 	if (strcmp(route, "index") == 0) set_route("", block, len);
 }
