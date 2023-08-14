@@ -11,11 +11,12 @@ science i enjoy is frequently a trek through formal specifications written by a
 homogeneous group of men from the 70's. the field's community has a tendency to
 reproduce itself, and, even in famously queer-accepting communities such as
 that of the rust programming language, the demographics haven't shifted as much
-as would be equitable. as this website is de-facto my corner of the internet, i
-want to present an approach to the programming i like to do that's more in line
-with my own values. the site as a whole is intended to be a more relaxed and informal
-environment where small mistakes are okay and difference is valued. i want to
-communicate not only what i've done, but who i am in my approach to it all.
+as would be equitable. as this website de-facto presents my own goals and
+personality, i want to present an approach to the programming i like to do
+that's more in line with my own values. the site as a whole is intended to be a
+more relaxed and informal environment where small mistakes are okay and
+difference is valued. i want to communicate not only what i've done, but who i
+am in my approach to it all.
 
 with that aside, here's the software i maintain or have maintained for some
 time, as a rough chronology:
@@ -83,6 +84,14 @@ student government. this read through the data produced by the qualtrics ballot
 forms and saved a friend on student government some amount of frustration. this
 is also on github, but not any more than a hundred lines, so it's not really
 worth linking.
+
++ pronouns.within.lgbt, a web service that lists neopronouns. i contributed
+core code for the query interface and collaborated with the maintainer to fix
+high memory usage in production.
+
+>https://github.com/xe/pronouns/ here's the code
+
+>https://pronouns.within.lgbt/ and here's the website
 
 + adage, a sudo replacement written in ada. this was originally supposed to be
 a fun exploration into ada like gemasmref was for prolog, but it turns out that
