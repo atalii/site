@@ -3,6 +3,8 @@
 
 #include "mongoose.h"
 
+#include "markup.h"
+
 #define MAX_ROUTES 1024
 
 struct response_body {
@@ -47,141 +49,6 @@ get_route(const char *ref)
 	}
 
 	return NULL;
-}
-
-int
-markup_render_line(char *buf, int cursor, int maxlen, const char *line)
-{
-	int old_cursor = cursor;
-	char lead = line[0];
-
-	int lstart = 0;
-	char head[128] = "";
-	char tail[128] = "";
-
-	switch (lead) {
-	case '*':
-		strcat(head, "<h1>");
-		strcat(tail, "</h1>");
-		lstart++;
-		break;
-	case '!':
-		strcat(head, "<h2>");
-		strcat(tail, "</h2>");
-		lstart++;
-		break;
-	case '>':
-		strcat(head, "<p><a href=\"");
-		while (!isspace(line[++lstart]));
-		strncat(head, line + 1, lstart);
-		strcat(head, "\">");
-
-		strcat(tail, "</a></p>");
-		break;
-	case '_':
-		strcat(head, "<hr/>");
-		lstart++;
-		break;
-	default:
-		strcat(head, "<p>");
-		strcat(tail, "</p>");
-		break;
-	}
-
-	strcpy(buf + cursor, head);
-	cursor += strlen(head);
-
-	// we're writing c, don't expect nice algorithms from me. insert the
-	// characters into memory one at a time, escaping as necessary.
-	for (const char *c = line + lstart; *c != '\0'; c++) {
-		switch (*c) {
-		case '&':
-			strcpy(buf + cursor, "&amp;");
-			cursor += strlen("&amp;");
-			break;
-		case '<':
-			strcpy(buf + cursor, "&lt;");
-			cursor += strlen("&lt;");
-			break;
-		case '>':
-			strcpy(buf + cursor, "&gt;");
-			cursor += strlen("&gt;");
-			break;
-		case '"':
-			strcpy(buf + cursor, "&quot;");
-			cursor += strlen("&quot;");
-			break;
-		case '\'':
-			strcpy(buf + cursor, "&#39;");
-			cursor += strlen("&#39;");
-			break;
-		default:
-			buf[cursor++] = *c;
-		}
-	}
-
-	strcpy(buf + cursor, tail);
-	cursor += strlen(tail);
-
-	return cursor - old_cursor;
-}
-
-static char *
-render_markup(const char *txt, int64_t len)
-{
-	// parse my quirky markup language, which is sort of like gemtext but
-	// without the resemblance to markdown.
-
-	int64_t buffer_size = 8192; // TODO: resize the buffer if additions would overflow
-	char *buf = malloc(buffer_size);
-	if (!buf) return NULL; // TODO: error out properly
-
-	/* isolate the page title. */
-	int title_start, title_end;
-	title_start = 0;
-	while (isspace(txt[++title_start]));
-	title_end = title_start;
-	while (txt[++title_end] != '\n');
-
-	const char *head_pre =
-		"<!DOCTYPE html><html><head>"
-		"<link rel=\"stylesheet\" type=\"text/css\" href=\"/styles.css\"/>"
-		"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"/>"
-		"<title>";
-	
-	const char *head_post =
-		"</title></head><body><main>";
-
-	const char *tail =
-		"<p id=\"footer\">"
-		"<span>(C) 2023</span>"
-		"<span>:3</span>"
-		"<span><a href=\"https://github.com/atalii/site/\">source</a></span>"
-		"<span><a href=\"/\">home</a></span>"
-		"🏳️‍⚧️</p></main></body></html>";
-
-	char *title = strndup(txt + title_start, title_end - title_start);
-	strcpy(buf, head_pre); // rip bounds checks
-	strcat(buf, title);
-	strcat(buf, head_post);
-	free(title);
-
-	int cursor = strlen(buf);
-	int par_start = 0;
-
-	for (int i = 0; i < len; i++) {
-		if ((i == len - 1) || (txt[i] == '\n' && txt[i + 1] == '\n')) {
-			char *line = strndup(&txt[par_start], i - par_start);
-			cursor += markup_render_line(buf, cursor, buffer_size, line);
-			free(line);
-
-			par_start = i + 2;
-			i += 2;
-		}
-	}
-
-	memcpy(buf + cursor, tail, strlen(tail) + 1); // also rip bounds checks
-	return buf;
 }
 
 static void

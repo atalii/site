@@ -8,8 +8,8 @@ server: res.zip server.bin
 res.zip: res
 	(cd res && zip ../res.zip *)
 
-server.bin: src/main.o src/mongoose.o
-	$(CC) $(CFLAGS) src/main.o src/mongoose.o -o server.bin
+server.bin: src/markup.h src/markup.o src/main.o src/mongoose.o
+	$(CC) $(CFLAGS) src/markup.o src/main.o src/mongoose.o -o server.bin
 
 clean:
 	rm -f src/*.o server server.bin res.zip
