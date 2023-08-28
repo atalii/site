@@ -27,6 +27,8 @@ struct {
 	.counter = 0,
 };
 
+static void respond(struct mg_connection *, struct mg_http_message *);
+
 static const struct response_body *
 get_route(const char *ref)
 {
@@ -189,8 +191,16 @@ hnd(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
 
 	struct mg_http_message *hm = (struct mg_http_message *) ev_data;
 
-	// TODO: verify that the method is GET
+	if (mg_strcmp(hm->method, mg_str("GET")) != 0) {
+		mg_http_reply(c, 405, NULL, "");
+	} else {
+		respond(c, hm);
+	}
+}
 
+static void
+respond(struct mg_connection *c, struct mg_http_message *hm)
+{
 	char *rqpath = strndup(hm->uri.ptr + (hm->uri.ptr[0] == '/'), hm->uri.len);
 
 	const struct response_body *resp = get_route(rqpath);
