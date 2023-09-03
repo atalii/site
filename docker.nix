@@ -4,7 +4,7 @@
 
 let
   name = "atalii/talinet";
-  version = "14082300";
+  version = "03092300";
 
   package = import ./default.nix { inherit pkgs; };
 in pkgs.dockerTools.buildImage {

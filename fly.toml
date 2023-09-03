@@ -7,7 +7,7 @@ app = "talinetwork"
 primary_region = "den"
 
 [build]
-image = "atalii/talinet:14082300"
+image = "atalii/talinet:03092300"
 
 [http_service]
   internal_port = 8080
