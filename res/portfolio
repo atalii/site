@@ -1,25 +1,7 @@
-! a bit of a quick-start guide
+! a portfolio's approximation
 
-this website is both a portfolio of sorts and a more technical blog where i
-write about the things i do for an imagined technical audience. to the extent
-that it's a portfolio, some of the things i've done are listed below, but to
-the extent that it's a blog, it's, stylistically, not all that formal. i'm not
-adhering to strict rules of grammar, capitalization, or readability, and i
-snuck a few emojis into the footer. in case formality was expected, i should
-explain that these are *counter-aesthetic choices*. the part of computer
-science i enjoy is frequently a trek through formal specifications written by a
-homogeneous group of men from the 70's. the field's community has a tendency to
-reproduce itself, and, even in famously queer-accepting communities such as
-that of the rust programming language, the demographics haven't shifted as much
-as would be equitable. as this website de-facto presents my own goals and
-personality, i want to present an approach to the programming i like to do
-that's more in line with my own values. the site as a whole is intended to be a
-more relaxed and informal environment where small mistakes are okay and
-difference is valued. i want to communicate not only what i've done, but who i
-am in my approach to it all.
-
-with that aside, here's the software i maintain or have maintained for some
-time, as a rough chronology:
+here's the software i maintain or have maintained for some time, as a rough
+chronology:
 
 + a fork of amp, a text editor written in rust (the actual maintainer was
 only sporadically merging and reviewing pull requests. i forked to maintain it
@@ -103,13 +85,21 @@ as a proper alternative in my eyes.
 
 >https://github.com/atalii/adage check out the source
 
++ argon2-ada, a binding for the argon2 KDF for ada. translating the C-isms in
+libargon2 to Ada was (and is) really quite fun. combining the type-level
+guarantees the bindings inherently provide with some formal verification later
+down the line should make this a robust little library.
+
+>https://github.com/atalii/argon2-ada and here's the source
+
 + i help maintain nixpkgs, the primary package set for the nix package manager.
 i try to review roughly one pull request per week to help keep everything running
 smoothly. i'm also the maintainer for the alire package, which is a fairly
 essential part of writing modern open source ada code. i'm currently working on
 getting some more substantial support of the ada language and alire ecosystem
 into nixpkgs. i've nothing specific to link here as of yet, but hopefully i'll
-have something soon.
+have something soon (by the time a college admissions officer reads this? who
+knows!).
 
 + i may as well also list this website, which has a few good hacks going for
 it. it's written ground-up in C, utilizing libraries just for HTTP and to read
