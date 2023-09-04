@@ -41,13 +41,10 @@ render_markup(const char *txt, int64_t len)
 	title_end = title_start;
 	while (txt[++title_end] != '\n');
 
-	char *title = strndup(txt + title_start, title_end - title_start);
-
-	/* begin rendering. TODO: don't allocate title. */
+	/* begin rendering. */
 	strcpy(buf, fragment_pre_title); // rip bounds checks
-	strcat(buf, title);
+	strncat(buf, txt + title_start, title_end - title_start);
 	strcat(buf, fragment_pre_text);
-	free(title);
 
 	/* move on to the doc. */
 	int cursor = strlen(buf);
