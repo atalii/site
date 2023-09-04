@@ -31,6 +31,8 @@ struct {
 
 static void respond(struct mg_connection *, struct mg_http_message *);
 
+static void die(const char *);
+
 static const struct response_body *
 get_route(const char *ref)
 {
@@ -151,6 +153,10 @@ set_route(const char *route, const char *block, int64_t len)
 		routes.routes[index].body.text = dup;
 		routes.routes[index].body.len = len;
 	}
+
+	if (!routes.routes[index].body.text) {
+		die("set_route got null, likely OOM");
+	}
 	
 	if (strcmp(route, "index") == 0) set_route("", block, len);
 }
@@ -196,6 +202,13 @@ read_zip_for_routes(void)
 
 	archive_read_free(a);
 	return 0;
+}
+
+static void
+die(const char *msg)
+{
+	printf("%s\n", msg);
+	exit(1);
 }
 
 int

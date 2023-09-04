@@ -32,7 +32,7 @@ render_markup(const char *txt, int64_t len)
 {
 	int64_t buffer_size = 8192; // TODO: resize on overflow
 	char *buf = malloc(buffer_size);
-	if (!buf) return NULL; // TODO: error out properly
+	if (!buf) return NULL;
 
 	/* isolate the page title */
 	int title_start, title_end;
