@@ -4,7 +4,7 @@ this is a weird website. it serves static content, but it's not a static
 server. instead, it and all the static assets are a single self-contained
 binary, produced in the penultimate build step:
 
-$ cat server.bin res.zip > server
+` $ cat server.bin res.zip > server
 
 this is perhaps my favorite frivolous trick: concatenating an executable and a zip
 archive happens to produce a single file that can simultaneously be interpreted
@@ -32,7 +32,7 @@ their own lines. it vaguely resembles gemtext, but, truth be told, it's just
 what i found myself writing when i opened my editor to write the index. let's
 dig inside the render_markup routine:
 
-int64_t buffer_size = 8192; // TODO: resize the buffer if additions would overflow
+` int64_t buffer_size = 8192; // TODO: resize the buffer if additions would overflow
 
 actually, let's put that away, and hope that no page ever renders to over 8192
 bytes. i'll fix it soon, i promise. aside from that, it's just brittle c-string

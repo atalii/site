@@ -5,13 +5,17 @@
 
 #include "markup.h"
 
-static int markup_render_line(char *, int, int, const char *);
+enum state {
+	DEFAULT
+};
+
+static int markup_render_line(enum state *, char *, int, int, const char *);
 
 /* The HTML prior to the <title> tag's content. */
 static const char *fragment_pre_title =
-	"<!DOCTYPE html><html><head>"
-	"<link rel =\"stylesheet\" type=\"text/css\" href=\"styles.css\"/>"
-	"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"/>"
+	"<!DOCTYPE html><html lang=\"en\"><head>"
+	"<link rel =\"stylesheet\" type=\"text/css\" href=\"styles.css\">"
+	"<meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\">"
 	"<title>";
 
 /* The HTML immediately after the <title> tag's content and before the rendered
@@ -25,7 +29,10 @@ const char *fragment_post =
 	"<span>:3</span>"
 	"<span><a href=\"https://github.com/atalii/site/\">source</a></span>"
 	"<span><a href=\"/\">home</a></span>"
-	"🏳️‍⚧️</p></main></body></html>";
+	"🏳️‍⚧️</p>"
+	"<div id=\"badges\">"
+	"<img src=\"http://www.w3.org/Icons/valid-html20-blue\" alt=\"valid html 2.0!\" title=\"no, not really\"/>"
+	"</div></main></body></html>";
 
 char *
 render_markup(const char *txt, int64_t len)
@@ -50,11 +57,13 @@ render_markup(const char *txt, int64_t len)
 	int cursor = strlen(buf);
 	int par_start = 0;
 
+	enum state state;
+
 	for (int i = 0; i < len; i++) {
 		if ((i == len - 1) || (txt[i] == '\n' && txt[i + 1] == '\n')) {
 			// TODO: check for NULL or avoid allocation entirely
 			char *line = strndup(&txt[par_start], i - par_start);
-			cursor += markup_render_line(buf, cursor, buffer_size, line);
+			cursor += markup_render_line(&state, buf, cursor, buffer_size, line);
 			free(line);
 
 			par_start = i + 2;
@@ -67,7 +76,7 @@ render_markup(const char *txt, int64_t len)
 }
 
 static int
-markup_render_line(char *buf, int cursor, int maxlen, const char *line)
+markup_render_line(enum state *state, char *buf, int cursor, int maxlen, const char *line)
 {
 	int old_cursor = cursor;
 
@@ -99,6 +108,11 @@ markup_render_line(char *buf, int cursor, int maxlen, const char *line)
 		strcat(head, "<hr/>");
 		lstart++;
 		break;
+	case '`':
+		strcat(head, "<pre>");
+		strcat(tail, "</pre>");
+		lstart++;
+		break;
 	default:
 		strcat(head, "<p>");
 		strcat(tail, "</p>");
@@ -107,6 +121,10 @@ markup_render_line(char *buf, int cursor, int maxlen, const char *line)
 
 	strcpy(buf + cursor, head);
 	cursor += strlen(head);
+
+	// let's eat whitespace so the backtick-monospace lines format okay
+	if (isspace(line[lstart]))
+		while(isspace(line[++lstart]));
 
 	// we're writing c, don't expect nice algorithms from me. insert the
 	// characters into memory one at a time, escaping as necessary.
