@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -37,7 +38,7 @@ const char *fragment_post =
 char *
 render_markup(const char *txt, int64_t len)
 {
-	int64_t buffer_size = 8192; // TODO: resize on overflow
+	int64_t buffer_size = 16384; // TODO: resize on overflow
 	char *buf = malloc(buffer_size);
 	if (!buf) return NULL;
 
@@ -79,6 +80,7 @@ static int
 markup_render_line(enum state *state, char *buf, int cursor, int maxlen, const char *line)
 {
 	int old_cursor = cursor;
+	bool mono = false;
 
 	int lstart = 0;
 	char head[128] = "";
@@ -112,6 +114,7 @@ markup_render_line(enum state *state, char *buf, int cursor, int maxlen, const c
 		strcat(head, "<pre>");
 		strcat(tail, "</pre>");
 		lstart++;
+		mono = true;
 		break;
 	default:
 		strcat(head, "<p>");
@@ -122,13 +125,19 @@ markup_render_line(enum state *state, char *buf, int cursor, int maxlen, const c
 	strcpy(buf + cursor, head);
 	cursor += strlen(head);
 
-	// let's eat whitespace so the backtick-monospace lines format okay
-	if (isspace(line[lstart]))
-		while(isspace(line[++lstart]));
+	bool eatspace = true;
 
 	// we're writing c, don't expect nice algorithms from me. insert the
 	// characters into memory one at a time, escaping as necessary.
 	for (const char *c = line + lstart; *c != '\0'; c++) {
+		if (eatspace && mono) {
+			eatspace = false;
+			if (*c == ' ') continue;
+		} else if (eatspace) {
+			if (isspace(*c)) continue;
+			else eatspace = false;
+		}
+
 		switch (*c) {
 		case '&':
 			strcpy(buf + cursor, "&amp;");
@@ -150,6 +159,14 @@ markup_render_line(enum state *state, char *buf, int cursor, int maxlen, const c
 			strcpy(buf + cursor, "&#39;");
 			cursor += strlen("&#39;");
 			break;
+
+		case '`':
+			if (mono) {
+				// we'll deal with what happens when we write
+				// backticks into code blocks... later.
+				eatspace = true;
+				break;
+			} else {} // FALLTHROUGH
 		default:
 			buf[cursor++] = *c;
 		}

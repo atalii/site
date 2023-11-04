@@ -1,0 +1,232 @@
+* Proving Arithmetic With Far Too Many Templates
+
+A few brainworms coalesced the other day, and I found myself writing some 1 AM
+code to do arithmetic with C++'s template metaprogramming. The
+ultimate goal was to implement a Peano arithmetic system, but for reasons this
+post discusses, the type system doesn't let us go quite that far.
+
+! Defining Numbers
+
+We use numbers a lot, so it's worth figuring out what exactly we mean when we
+say such strange things as "2", "3", or "2 + 2". To simplify, we restrict our
+description only to the natural numbers. Importantly, this set has a fairly
+convenient starting point to describe:
+
+` class Zero {};
+
+With this one line of code, we can indulge ourselves in proving such
+mathematical truths as "0 = 0":
+
+` static_assert(std::is_same<Zero, Zero>::value);
+
+Then, we can define 1. 1 has the special property of being the smallest natural
+number greater than 0. We may call it, then, the successor of 0. In logic, we
+write that as S(0), but in C++, we write it like this, where S is shorthand for
+Successor:
+
+` class S<typename T> {};
+` using One = S<Zero>;
+
+Then, we can inductively define every other natural number as a successor of
+the previous:
+
+` using Two   = S<One>;   // S<S<Zero>>
+` using Three = S<Two>;   // S<S<S<Zero>>>
+` using Four  = S<Three>; // S<S<S<S<Zero>>>>
+` // and so it goes...
+
+Now, we can use the type solver and show some basic mathematical truths:
+
+` static_assert(std::is_same<Two, Two>::value);    // 2 = 2
+` static_assert(!std::is_same<Three, Two>::value); // 3 ≠ 2
+
+! Numbers: They Do Stuff, Right?
+
+Writing numbers out is nice and all, but we may want to add them together.
+Addition in our arithmetic is fairly intuitive. As point of illustration, let's
+start with 1 + 1. In our types, we're asking for S<Zero> + S<Zero>, which,
+intuitively enough, is S<S<Zero>>. After we implement some form of addition, we
+should be able to write and compile something like the following:
+
+` using R = Add<One, One>::Result;
+` static_assert(std::is_same<R, Two>::value);
+
+Let's start out defining addition as a template type over two parameters, a
+left-hand side (LHS) and a right-hand side (RHS):
+
+` template <typename LHS, typename RHS> class Add {};
+
+We can use SFINAE to make a recursive definition of addition. The first step is
+the base case, where we add 0 to some number:
+
+` template <typename RHS> class Add<Zero, RHS>
+` {
+` public:
+`         using Result = RHS;
+` };
+
+We can test this base case fairly trivially:
+
+` using R = Add<Zero, One>::Result;
+` static_assert(std::is_same<R, One>::value);
+
+Of course, we haven't yet defined addition for anything but 0 and some other
+parameter. If we tried, for instance, the following:
+
+` using R = Add<One, One>::Result;
+
+The compiler will tell us that it can't expand the template. And how could it?
+We've only told it how to do addition when the leftmost argument is Zero. The
+trick, then, is to write a recursive step to bring that leftmost argument to 0.
+This isn't too hard at all: If it's not 0, then it's the successor of some
+number. What we need to do is add that number to our RHS and take the successor
+of that:
+
+` template <typename LHS, typename RHS>
+` class Add<S<LHS>, RHS> {
+` public:
+`         using Result = S<typename Add<LHS, RHS>::Result>;
+` };
+
+The intuition here is that we reduce (1 + x) + y to 1 + (x + y). As we do this
+over and over again, x shrinks until it's 0, and we end up on the base case.
+Now that we've got this definition written, up, we can prove such difficult
+statements as 2 + 2 = 4:
+
+` using TwoPlusTwo = Add<Two, Two>::Result;
+` static_assert(std::is_same<TwoPlusTwo, Four>::value, "2 + 2 = 4.");
+
+This code compiles successfully only when the C++ compiler computes Add<Two,
+Two> and verifies that it is precisely equivalent to our definition of Four. If
+it can't verify this, it doesn't compile.
+
+! The Beginning of the End: Comparison and Predicates
+
+The next type of expression we'd like to describe are predicates. We can think
+of an addition as a function from two integers that returns an integer. How,
+then, can we think of a comparison? If we say 2 = 2, or 2 > 1, we're not asking
+for a number, we're saying something that's either true or false. We may be
+tempted to think of this type of operation as a function from two natural
+numbers to a boolean, but there are some subtle issues with this idea. In
+traditional arithmetic systems, the universe of discourse is just the natural
+numbers, which, remember, are anything that can be defined by successive
+applications of S to 0. If we were to have booleans in this language, S(True)
+would be a valid sentence. Of course, the successor of True has no meaning.
+Predicates, alas, aren't functions. Truth-values are, pedantically speaking,
+not part of the universe of discourse.
+
+If you've kept up with C++, you may look to concepts here: Concepts, introduced
+in C++20, are arbitrary predicates that can limit template expansion. Using the
+Integral predicate, we might write a template like this:
+
+` template <Integral T> T add(T a, T b);
+
+This will only compile if the types we give it satisfy the Integral predicate.
+So ideally, we'd like to define something like this:
+
+` template <typename LHS, typename RHS>
+` concept LessThan = /* ... */;
+
+Then, we'd be able to write out something like the below to show relations:
+
+` static_assert(LessThan<One, Two>);
+
+If you've kept up a bit too much with C++, however, you'll know that this is
+doomed to failure. Our definition of LessThan will have to be recursive in a
+similar manner to addition, and, alas, concepts are forbidden from recursing.
+So, we have to break the rules a bit and add booleans to our universe of
+discourse. The LessThan 'predicate' will really be more like a function, and
+using it will look like this:
+
+` using R = LessThan<One, Two>::Result;
+` static_assert(std::is_same<R, std::true_type>::value);
+
+What happens if we write S<std::true_type>? It's technically valid, but don't
+do it.
+
+At 1 AM, I found myself implementing LEThan (less than or equal than) rather
+than just less than, but the basic principles are the same. We start with the
+basic definition:
+
+` template <typename LHS, typename RHS>
+` class LEThan {};
+
+Then we add a base case in which we say that 0 is less than or equal to
+everything and anything:
+
+` template <typename RHS>
+` class LEThan<Zero, RHS>
+` {
+` public:
+`         using Result = std::true_type;
+` };
+
+We need another base case to specify that the successor of any number is not
+less than or equal to 0.
+
+` template <typename LHS>
+` class LEThan<S<LHS>, Zero>
+` {
+` public:
+`         using Result = std::false_type;
+` }
+
+Now, we can implement the main recursion:
+
+` template <typename LHS, typename RHS>
+` class LEThan<S<LHS>, S<RHS>>
+` {
+` public:
+`         using Result = LEThan<LHS, RHS>::Result;
+` };
+
+We're now able to static_assert some somewhat useful information:
+
+` using TwoLEFour = LEThan<Two, Four>::Result;
+` static_assert(std::is_same<TwoLEFour, std::true_type>::value, "2 <= 4");
+
+! Faltering at Quantification
+
+Now that we can prove relations between some numbers, the next step is to prove
+relationships between all numbers. Perhaps we would want to show that addition
+is associative; i.e., that m + n is the same as n + m. We can show this for any
+two particular numbers quite easily:
+
+` static_assert(std::is_same<Add<One, Two>::Result, Add<Two, One>::Result>::value);
+
+But what we really want is a more general version of this. We want to say
+something like, "for all x and for all y, x + y = y + x". We want to use a
+quantifier. We want to get the C++ type solver to solve something not just for
+one template type, but for all possible instantiations of it. Alas, this is
+impossible.
+
+There are two more rules we'd want to write before we could claim to have a
+complete Peano arithmetic; one for multiplication and one for induction.
+Multiplication is a recursive definition much in the same way that addition
+works, but induction is trickier. In the language of formal logic, it's spelled
+out like this:
+
+` (φ(0) ∧ (φ(n) → φ(S(n))) → ∀xφ(x)
+
+That is, given some predicate φ, if we know it's true for 0, and we know that
+if it's true for some number n then it is also true for S(n) (which, remember,
+just means n + 1), then we can say that it's true for all numbers. To prove
+anything about all numbers, we need to be able to express this.
+
+We need universal quantification over types. We need to be able to ask C++'s
+type system to deal not just with S<S<S<S<Zero>>>>, but with S<anything and
+everything>. Alas, we cannot write a program of finite length that coerces C++
+into this behavior, and so we say that Peano arithmetic is finitely
+unrepresentable in C++.
+
+! Some Conclusions
+
+There's very little to say by way of practical applications. Never will Peano
+arithmetic be more practical in real-world programs than an addq. Going through
+this, however, felt to me to be an excellent way to get a greater grasp of the
+logical demands of basic math. Induction is not a particularly advanced or
+unintuitive proof technique, but the machinery behind it is so vast that it is
+literally not finitely representable in even a language as large as C++. Of
+course, one can do these things with little difficulty in Idris or Coq, but
+there's no fun in that. It really is not a bad exercise to try to reconstruct
+those rules outside of where they're assumed.
