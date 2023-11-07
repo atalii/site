@@ -32,6 +32,7 @@ const char *fragment_post =
 	"<span><a href=\"/\">home</a></span>"
 	"🏳️‍⚧️</p>"
 	"<div id=\"badges\">"
+	"<a href=\"/teapot\"><img src=\"/teapot.png\" alt=\"a teapot website\"/></a>"
 	"<img src=\"http://www.w3.org/Icons/valid-html20-blue\" alt=\"valid html 2.0!\" title=\"no, not really\"/>"
 	"</div></main></body></html>";
 

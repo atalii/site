@@ -60,4 +60,5 @@ p#footer > span, p#footer {
 
 div#badges > img {
 	display: inline;
+	padding-left: 0.5em;
 }

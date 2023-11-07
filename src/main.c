@@ -15,6 +15,8 @@ struct response_body {
 	// arbitrary data and may contain a null pointer. the allocation is len
 	// bytes long.
 	ssize_t len;
+
+	int status;
 };
 
 /* Do a bit of a static slab-allocation for routes. Also, we just do a linear
@@ -89,7 +91,7 @@ respond(struct mg_connection *c, struct mg_http_message *hm)
 		strcat(cbuf, resp->mime_type);
 		strcat(cbuf, "\r\n");
 
-		mg_http_reply(c, 200, cbuf, "%s", resp->text);
+		mg_http_reply(c, resp->status, cbuf, "%s", resp->text);
 		free(cbuf);
 	} else {
 		mg_printf(c,
@@ -132,18 +134,26 @@ set_route(const char *route, const char *block, int64_t len)
 
 	int is_ttf = strlen(route) > 4
 		&& strcmp(route + strlen(route) - 4, ".ttf") == 0;
+
+	int is_png = strlen(route) > 4
+		&& strcmp(route + strlen(route) - 4, ".png") == 0;
+
+	int is_teapot = strcmp(route, "teapot") == 0;
 	
 	// for now, all routes return utf-8.
 	routes.routes[index].route = strdup(route);
+	routes.routes[index].body.status = is_teapot ? 418 : 200;
 	routes.routes[index].body.len = -1;
 	routes.routes[index].body.mime_type = is_css
 		? "text/css; charset=utf-8"
 		: is_ttf
 			? "font/ttf"
-			: "text/html; charset=utf-8";
+			: is_png
+				? "image/png"
+				: "text/html; charset=utf-8";
 
 	// ttf is the only binary data type we have to deal with.
-	if (!is_ttf) {
+	if (!is_ttf && !is_png) {
 		routes.routes[index].body.text = is_css
 			? strndup(block, len)
 			: render_markup(block, len);
